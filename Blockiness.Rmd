@@ -1,0 +1,45 @@
+---
+title: "Testing Blockiness Trait"
+author: "Bryan"
+date: "February 13, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Rough Calculation of Blockiness
+
+```{r}
+# Define names (Change each time)
+filepath <- "/home/bryan/Downloads/17CHMC0024CUN_harvest.csv"
+trialname <- "17CHMC0024CUN"
+
+# Read in csv file
+exeter_data <- read.csv(filename, header = TRUE, check.names = TRUE,  stringsAsFactors = FALSE)
+
+# Define cups based on color
+exeter_data <- within(exeter_data, accession_name[color == 15790320] <- 'All_Cups')
+
+# Calculate max root areas
+exeter_data$max.area <- as.numeric(exeter_data$estimated.length) * as.numeric(exeter_data$estimated.diameter)
+
+# Calculating 1st cup's blockiness in order to express everything else in terms of it
+blockiness_of_1st_cup <- 243896/316
+
+# Calculate blockiness as % of 1st cup for each root
+exeter_data$blockiness <- blockiness_of_1st_cup / ( exeter_data$max.area /  as.numeric(exeter_data$estimaged.weight) )
+
+# Filter to remove canners, in this case keeping only roots with diam >= 200 and weight >= 49
+exeter_data_no_canners <- exeter_data[exeter_data$estimated.diameter >= 200,]
+exeter_data_no_canners <- exeter_data_no_canners[exeter_data_no_canners$estimaged.weight >= 49,]
+
+# Adjust plot size to fit vertical x labels
+par(mar=c(10,5,4,2))
+
+# Draw boxplot
+title <- paste("Storage Root Blockiness", trialname, sep=" ") 
+boxplot(blockiness~accession_name, data=exeter_data_no_canners, main=title, ylab="Blockiness", las=2)
+
+```
