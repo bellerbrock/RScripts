@@ -1,0 +1,145 @@
+---
+title: "Parent Selection Options"
+author: "Bryan"
+date: "April 12, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Import
+
+A  full NCSU yield dataset is downloaded from sweetpotatobase through the wizard. It's imported and filtered to keep only measurements for material that was still active in the program in 2018. Then yield is calculated on a per plot basis to account for different plot sizes in different trials
+
+```{r}
+library(dplyr)
+yielddat = read.csv("/home/bryan/Desktop/08-18yieldandweatherHCRCUN.csv", header=T)
+data2018 <- yielddat[yielddat$studyYear == 2018,]
+planted2018 <- unique(data2018$germplasmName)
+filtered_yield <-  yielddat[yielddat$germplasmName %in% planted2018,]
+filtered_yield$no1perplant <- (filtered_yield$US1_kgplot/filtered_yield$PltsHrv_plot)
+filtered_yield$totalperplant <- (filtered_yield$Tot_kgplot/filtered_yield$PltsHrv_plot)
+```
+
+## Option 1: Simple Averages
+
+Calculate and plot the mean yield of each available genotype
+
+NO1 Yield:
+
+```{r}
+no1means <- filtered_yield %>% 
+  filter(!is.na(no1perplant)) %>%
+  group_by(germplasmName) %>%
+  summarise(no1perplant = mean(no1perplant))
+no1counts <- filtered_yield %>% 
+  filter(!is.na(no1perplant)) %>%
+  group_by(germplasmName) %>% tally()
+
+no1 <- merge(no1means,no1counts,by="germplasmName") %>% arrange(desc(no1perplant))
+head(no1, n=10)
+```
+
+Total Yield:
+
+```{r}
+totalmeans <- filtered_yield %>% 
+  filter(!is.na(totalperplant)) %>%
+  group_by(germplasmName) %>%
+  summarise(totalperplant = mean(totalperplant))
+  
+totalcounts <- filtered_yield %>% 
+  filter(!is.na(totalperplant)) %>%
+  group_by(germplasmName) %>% tally()
+
+total <- merge(totalmeans,totalcounts,by="germplasmName") %>% arrange(desc(totalperplant))
+head(total, n=10)
+```
+
+## Option 2: Percent of Check
+
+Calculate yield for each plot as a percent of the check in the same rep. This is an easy way to control for variation from year, rep, location, and trial length. And for variety release this is the measure that ultimately is most important.
+
+Plot Basis
+
+```{r}
+# Combine trial and rep as new 'block' factor
+filtered_yield$block <- paste(filtered_yield$studyName, filtered_yield$replicate, sep='') 
+
+# Extract covington's yield measurments by block, give them unique column names
+cov_data <- filtered_yield[filtered_yield$germplasmName == "Covington", c("no1perplant","totalperplant","block")]
+names(cov_data) <- c("covno1perplant", "covtotalperplant", "block")
+
+# Merge covington values back to data frame by block, then calculate percent cov traits
+filtered_yield <- merge(filtered_yield,cov_data,by="block")
+filtered_yield$No1YieldPerCov <- filtered_yield$no1perplant/filtered_yield$covno1perplant
+filtered_yield$TotalYieldPerCov <- filtered_yield$totalperplant/filtered_yield$covtotalperplant
+
+# Calculate NO1 mean values
+covno1means <- filtered_yield %>% 
+  filter(!is.na(No1YieldPerCov)) %>%
+  group_by(germplasmName) %>%
+  summarise(No1YieldPerCov = mean(No1YieldPerCov))
+covno1counts <- filtered_yield %>% 
+  filter(!is.na(No1YieldPerCov)) %>%
+  group_by(germplasmName) %>% tally()
+
+covno1 <- merge(covno1means,covno1counts,by="germplasmName") %>% arrange(desc(No1YieldPerCov))
+head(covno1, n=10)
+
+# Calculate total mean values
+covtotalmeans <- filtered_yield %>% 
+  filter(!is.na(TotalYieldPerCov)) %>%
+  group_by(germplasmName) %>%
+  summarise(TotalYieldPerCov = mean(TotalYieldPerCov))
+covtotalcounts <- filtered_yield %>% 
+  filter(!is.na(TotalYieldPerCov)) %>%
+  group_by(germplasmName) %>% tally()
+
+covtotal <- merge(covtotalmeans,covtotalcounts,by="germplasmName") %>% arrange(desc(TotalYieldPerCov))
+head(covtotal, n=10)
+
+```
+
+Trial Basis
+
+Alternatively, include an extra step that first calculates an accessions mean in each individual trial from the plots in the trial, then calculate a mean across trials.
+
+```{r}
+
+
+
+```
+
+
+## Option 3: BLUP
+
+Calculate yield BLUPs for each genotype, which will adjust for # observations, year, location, and rep differences
+
+```{r}
+
+```
+
+## Option 4: EBVs
+
+Calculate then estimated breeding values Estentially same as BLUP but including pedigree information
+
+```{r}
+plot(pressure)
+```
+
+## Option 3: Percent of check BLUPs
+
+Calculate yield BLUPs for each genotype for percent of check trait
+```{r}
+plot(pressure)
+```
+
+## Option 4: Percent of check EBVs
+
+Calculate then estimated breeding values for percent of check trait. 
+```{r}
+plot(pressure)
+```
