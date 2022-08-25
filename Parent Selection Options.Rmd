@@ -11,11 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Data Import
 
-A  full NCSU yield dataset is downloaded from sweetpotatobase through the wizard. It's imported and filtered to keep only measurements for material that was still active in the program in 2018. Then yield is calculated on a per plot basis to account for different plot sizes in different trials
+A  full NCSU yield dataset is downloaded from sweetpotatobase through the wizard. It's imported and filtered to keep only measurements for material that was still active in the program in 2018. Then yield is calculated on a per plant basis to account for different plot sizes in different trials
 
 ```{r}
 library(dplyr)
-yielddat = read.csv("/home/bryan/Desktop/08-18yieldandweatherHCRCUN.csv", header=T)
+yielddat = read.csv("/home/bryan/projects/RScripts/08-18yieldandweatherHCRCUN.csv", header=T)
 data2018 <- yielddat[yielddat$studyYear == 2018,]
 planted2018 <- unique(data2018$germplasmName)
 filtered_yield <-  yielddat[yielddat$germplasmName %in% planted2018,]
