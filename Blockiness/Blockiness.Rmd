@@ -1,0 +1,89 @@
+---
+title: "Testing Blockiness Trait"
+author: "Bryan"
+date: "February 13, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read in Data
+
+```{r}
+# Define names (Change each time)
+filepath1 <- "~/projects/RScripts/17CHMC0024CUN_harvest.csv"
+filepath2 <- "~/projects/RScripts/17CHM10024HCR_harvest.csv"
+trialname <- "17CHM0024"
+
+# Read in csv files
+file1_data <- read.csv(filepath1, header = TRUE, check.names = TRUE,  stringsAsFactors = FALSE)
+file2_data <- read.csv(filepath2, header = TRUE, check.names = TRUE,  stringsAsFactors = FALSE)
+
+# Combine data from both locations
+data <- rbind(file1_data, setNames(file2_data, names(file1_data)))
+```
+
+## Identify cups and calculate blockiness
+
+```{r}
+
+# Define cups based on color
+data <- within(data, accession_name[color == 15790320] <- 'All_Cups')
+
+# Calculate max root areas
+data$max.area <- as.numeric(data$estimated.length) * as.numeric(data$estimated.diameter)
+
+# Calculating 1st cup's "blockiness"
+# Blockiness calculated as maximum possible 2D area divided by estimated weight.
+cup_area <- data[match("All_Cups", data$accession_name),which(colnames(data)=="max.area")]
+cup_weight <- data[match("All_Cups", data$accession_name),which(colnames(data)=="estimaged.weight")]
+cup_blockiness <- cup_area / cup_weight
+
+# Calculate blockiness as % of 1st cup for each root
+data$blockiness <- cup_blockiness / ( data$max.area /  as.numeric(data$estimaged.weight) )
+```
+
+# Filter out all but No1 roots and Jumbos
+
+```{r}
+# Remove canners and culls by keeping only roots with diam >= 200 and length >= 299 and weight >=50
+No1s_and_Jumbos <- data[data$estimated.diameter >= 200 & data$estimated.length >= 300 & data$estimaged.weight >= 50,]
+
+# Set No1s as remaining roots with diam <= 350 and length <= 900 and weight <=220
+No1s <- No1s_and_Jumbos[No1s_and_Jumbos$estimated.diameter <= 350 & No1s_and_Jumbos$estimated.length <= 900 & No1s_and_Jumbos$estimaged.weight <= 220,] 
+
+# Set Jumbos as remaining roots with diam > 350 or length > 900 or weight > 220
+Jumbos <- No1s_and_Jumbos[No1s_and_Jumbos$estimated.diameter > 350 | No1s_and_Jumbos$estimated.length > 900 | No1s_and_Jumbos$estimaged.weight > 220,]
+```
+
+# Draw boxplots 
+
+```{r}
+# Adjust plot size to fit vertical x labels
+par(mar=c(10,5,4,2))
+
+# Draw No1 and Jumbo boxplot and add sample size text
+title <- paste("No1 and Jumbo Blockiness", trialname, sep=" ") 
+b <- boxplot(blockiness ~ accession_name, data=No1s_and_Jumbos, main=title, ylab="Blockiness", las=2)
+
+# To add sample size text 
+#text(seq_along(na.omit(unique(No1s_and_Jumbos$accession_name))), b$stats[3,] + 0.015, b$n)
+
+# Draw No1 boxplot and add sample size text
+title <- paste("No1 Blockiness", trialname, sep=" ") 
+b <- boxplot(blockiness ~ accession_name, data=No1s, main=title, ylab="Blockiness", las=2)
+
+# To add sample size text 
+#text(seq_along(na.omit(unique(No1s$accession_name))), b$stats[3,] + 0.015, b$n)
+
+# Draw Jumbo boxplot and add sample size text
+title <- paste("Jumbo Blockiness", trialname, sep=" ") 
+b <- boxplot(blockiness ~ accession_name, data=Jumbos, main=title, ylab="Blockiness", las=2)
+
+# To add sample size text 
+#text(seq_along(na.omit(unique(Jumbos$accession_name))), b$stats[3,] + 0.015, b$n)
+```

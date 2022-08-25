@@ -1,0 +1,73 @@
+---
+title: "Exeter Density"
+author: "Bryan Ellerbrock"
+date: "11/2/2021"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/projects/RScripts/Blockiness")
+cdata <- read.csv("Exeter_calibration.csv", header = TRUE, check.names = TRUE,  stringsAsFactors = FALSE)
+```
+
+## Calibration Data
+
+```{r echo=FALSE}
+knitr::kable(cdata, format="markdown")
+```
+
+length in inches x 100 and weight in ounces x 10
+
+## Calculating Density
+
+Multiplying length by 0.0254 to get lengthCm (0.0254cm per 100th of an inch)
+
+```{r echo=FALSE}
+cdata$lengthCm = cdata$length * 0.0254 # 0.0254 cm per 100th of an inch
+knitr::kable(cdata[,c(1,5)], format="markdown")
+```
+
+Dividing pixelLength by lengthCm to get pixels/cm estimates
+
+```{r echo=FALSE}
+cdata$pixelsPerCm = cdata$pixelLength /cdata$lengthCm
+knitr::kable(cdata[,c(2,5,6)], format="markdown")
+```
+
+Calculating mean number of pixels/cm, then raising to power of three to get cubic pixels/cubic cm
+
+```{r}
+meanPixelsPerCm = mean(cdata$pixelsPerCm)
+cubedPixelsPerCmCubed = meanPixelsPerCm ^ 3
+```
+
+Dividing pixelVolume by cubic pixels/cubic cm to get volume in cubic cm
+
+```{r echo=FALSE}
+cdata$cmCubed = cdata$pixelVolume / cubedPixelsPerCmCubed
+knitr::kable(cdata[,c(4,7)], format="markdown")
+```
+
+Multiplying weight by 2.83495 to get weight in grams (2.83495 g per 10th of an oz)
+
+```{r echo=FALSE}
+cdata$weightGrams = cdata$weight * 2.83495
+knitr::kable(cdata[,c(3,8)], format="markdown")
+```
+
+Dividing weight in grams by volume in cubic cms to get density estimates, then calculating mean density
+
+```{r echo=FALSE}
+cdata$densityCmCubed = cdata$weightGrams / cdata$cmCubed
+knitr::kable(cdata[,c(7,8,9)], format="markdown")
+```
+
+```{r}
+meanDensityCmCubed= mean(cdata$densityCmCubed)
+meanDensityCmCubed
+```
